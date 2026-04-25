@@ -78,7 +78,7 @@ $hooksConfig = @{
                 hooks = @(
                     @{
                         type = "command"
-                        command = "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File `"%USERPROFILE%\.claude\hooks\notify.ps1`" -Event Notification"
+                        command = "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"& \\$env:USERPROFILE\\.claude\\hooks\\notify.ps1 -Event Notification\""
                         timeout = 15
                     }
                 )
@@ -90,7 +90,7 @@ $hooksConfig = @{
                 hooks = @(
                     @{
                         type = "command"
-                        command = "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File `"%USERPROFILE%\.claude\hooks\notify.ps1`" -Event Stop"
+                        command = "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"& \\$env:USERPROFILE\\.claude\\hooks\\notify.ps1 -Event Stop\""
                         timeout = 15
                     }
                 )
