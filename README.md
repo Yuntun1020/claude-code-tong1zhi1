@@ -13,12 +13,8 @@
 
 通知示例（带自定义图标）：
 
-```
-┌─────────────────────────────┐
-│ [🦀 图标] ClaudeCode        │
-│        Task completed...    │
-└─────────────────────────────┘
-```
+<img width="555" height="200" alt="image" src="https://github.com/user-attachments/assets/fb6f8eed-3d7d-467a-87a0-83eb22463361" />
+
 
 ## 快速安装
 
