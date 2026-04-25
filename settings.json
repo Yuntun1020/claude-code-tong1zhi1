@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\notify.ps1\" -Event Notification",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\hooks\\notify.ps1\" -Event Stop",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
