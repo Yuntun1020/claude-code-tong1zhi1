@@ -49,21 +49,26 @@ if ($Event -eq "Stop") {
             }
         } catch {}
     }
-    if ($body.Trim() -eq "") { $body = "任务完成，请查看结果。" }
+    if ($body.Trim() -eq "") {
+        if ($projectName -ne "") { $body = "任务完成: $projectName" }
+        if ($body.Trim() -eq "") { $body = "任务完成，请查看结果。" }
+    }
     if ($body.Length -gt 150) { $body = $body.Substring(0, 147) + "..." }
 
 } elseif ($Event -eq "PermissionRequest") {
     $title = "$toastTitle - 权限请求"
+    $details = @()
     if ($data -and $data.arguments) {
         $args = $data.arguments
-        if ($args.tool -and $args.tool -ne "") { $body = "工具: $($args.tool)" }
+        if ($args.tool -and $args.tool -ne "") { $details += "工具: $($args.tool)" }
         if ($args.command -and $args.command -ne "") {
             $cmd = $args.command
-            if ($cmd.Length -gt 100) { $cmd = $cmd.Substring(0, 97) + "..." }
-            if ($body -ne "") { $body = "$body`n$cmd" } else { $body = $cmd }
+            if ($cmd.Length -gt 80) { $cmd = $cmd.Substring(0, 77) + "..." }
+            $details += $cmd
         }
     }
-    if ($body.Trim() -eq "") { $body = "Claude 请求权限确认，请检查操作。" }
+    if ($details.Count -gt 0) { $body = $details -join "`n" }
+    if ($body.Trim() -eq "") { $body = "需要权限确认，请检查操作。" }
 
 } elseif ($Event -eq "Notification") {
     $title = "$toastTitle - 需要关注"
@@ -74,7 +79,6 @@ if ($Event -eq "Stop") {
         $body = "Claude 正在等待你的输入或批准。"
     }
 } else {
-    $title = $toastTitle
     $body = "事件: $Event"
 }
 
@@ -86,6 +90,49 @@ function Send-ToastViaBurntToast {
     } else {
         New-BurntToastNotification -Text $t, $b -Sound Default
     }
+}
+
+function Send-ToastViaWinRT {
+    param($t, $b)
+    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom, ContentType = WindowsRuntime] | Out-Null
+
+    $appId = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe"
+    $safeTitle = [System.Security.SecurityElement]::Escape($t)
+    $safeBody  = [System.Security.SecurityElement]::Escape($b)
+
+    if ($toastIcon) {
+        $iconUri = "file:///" + ($toastIcon -replace "\\", "/")
+        $xml = @"
+<toast>
+    <visual>
+        <binding template='ToastGeneric'>
+            <image placement='appLogoOverride' src='$iconUri'/>
+            <text>$safeTitle</text>
+            <text>$safeBody</text>
+        </binding>
+    </visual>
+    <audio src='ms-winsoundevent:Notification.Default'/>
+</toast>
+"@
+    } else {
+        $xml = @"
+<toast>
+    <visual>
+        <binding template='ToastGeneric'>
+            <text>$safeTitle</text>
+            <text>$safeBody</text>
+        </binding>
+    </visual>
+    <audio src='ms-winsoundevent:Notification.Default'/>
+</toast>
+"@
+    }
+
+    $toastXml = [Windows.Data.Xml.Dom.XmlDocument]::new()
+    $toastXml.LoadXml($xml)
+    $toast = [Windows.UI.Notifications.ToastNotification]::new($toastXml)
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show($toast)
 }
 
 function Send-ToastViaBalloon {
@@ -108,6 +155,10 @@ try {
     Send-ToastViaBurntToast $title $body
 } catch {
     try {
-        Send-ToastViaBalloon $title $body
-    } catch {}
+        Send-ToastViaWinRT $title $body
+    } catch {
+        try {
+            Send-ToastViaBalloon $title $body
+        } catch {}
+    }
 }
