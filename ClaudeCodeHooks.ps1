@@ -1,6 +1,4 @@
-﻿param(
-    [string]$State = 'Stop'
-)
+﻿param( $"State = 'Stop')
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -55,7 +53,7 @@ if ($State -eq 'Stop') {
     if ($body.Length -gt 150) { $body = $body.Substring(0, 147) + '...' }
 }
 elseif ($State -eq 'PermissionRequest') {
-    $title = "$title - 权限请求"
+    $title = "$title - 权限请求" }
     $body = '需要权限确认'
     if ($data.arguments) {
         $a = $data.arguments
@@ -96,10 +94,10 @@ function Send-ToastWinRT {
         $safeTitle = [System.Security.SecurityElement]::Escape($t)
         $safeBody = [System.Security.SecurityElement]::Escape($b)
         if (Test-Path $pngPath) {
-            $uri = 'file:///' + ($pngPath -replace '\\', '/')
-            $xml = "<?xml version="1.0" encoding="UTF-8"?><toast><visual><binding template="ToastGeneric"><image placement="appLogoOverride" src="$uri"/><text>$safeTitle</text><text>$safeBody</text></binding></visual><audio src="ms-winsoundevent:Notification.Default"/></toast>"
+            $uri = 'file:///' + ($pngPath -replace '\' + '\' + '\' + '\', '/')
+            $xml = '<?xml version="1.0" encoding="UTF-8"?><toast><visual><binding template="ToastGeneric"><image placement="appLogoOverride" src="' + $uri + '"/><text>' + $safeTitle + '</text><text>' + $safeBody + '</text></binding></visual><audio src="ms-winsoundevent:Notification.Default"/></toast>'
         } else {
-            $xml = "<?xml version="1.0" encoding="UTF-8"?><toast><visual><binding template="ToastGeneric"><text>$safeTitle</text><text>$safeBody</text></binding></visual><audio src="ms-winsoundevent:Notification.Default"/></toast>"
+            $xml = '<?xml version="1.0" encoding="UTF-8"?><toast><visual><binding template="ToastGeneric"><text>' + $safeTitle + '</text><text>' + $safeBody + '</text></binding></visual><audio src="ms-winsoundevent:Notification.Default"/></toast>'
         }
         $xdoc = [Windows.Data.Xml.Dom.XmlDocument]::new()
         $xdoc.LoadXml($xml)
