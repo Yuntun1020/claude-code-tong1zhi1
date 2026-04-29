@@ -1,4 +1,6 @@
-﻿param( $"State = 'Stop')
+﻿param(
+    [string]$State = 'Stop'
+)
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
@@ -14,8 +16,7 @@ $inputLines = @()
 while ($null -ne ($line = [Console]::In.ReadLine())) {
     $inputLines += $line
 }
-$rawJson = $inputLines -join "
-"
+$rawJson = $inputLines -join "`n"
 
 $data = $null
 if ($rawJson.Trim() -ne '') {
@@ -53,7 +54,7 @@ if ($State -eq 'Stop') {
     if ($body.Length -gt 150) { $body = $body.Substring(0, 147) + '...' }
 }
 elseif ($State -eq 'PermissionRequest') {
-    $title = "$title - 权限请求" }
+    $title = "$title - 权限请求"
     $body = '需要权限确认'
     if ($data.arguments) {
         $a = $data.arguments
@@ -64,8 +65,7 @@ elseif ($State -eq 'PermissionRequest') {
             if ($c.Length -gt 80) { $c = $c.Substring(0, 77) + '...' }
             $parts += $c
         }
-        if ($parts.Count -gt 0) { $body = $parts -join "
-" }
+        if ($parts.Count -gt 0) { $body = $parts -join "`n" }
     }
     if ($body -eq '需要权限确认' -and -not $data.arguments) {
         $body = '需要权限确认，请检查操作。'
@@ -94,7 +94,7 @@ function Send-ToastWinRT {
         $safeTitle = [System.Security.SecurityElement]::Escape($t)
         $safeBody = [System.Security.SecurityElement]::Escape($b)
         if (Test-Path $pngPath) {
-            $uri = 'file:///' + ($pngPath -replace '\' + '\' + '\' + '\', '/')
+            $uri = 'file:///' + ($pngPath -replace '\\', '/')
             $xml = '<?xml version="1.0" encoding="UTF-8"?><toast><visual><binding template="ToastGeneric"><image placement="appLogoOverride" src="' + $uri + '"/><text>' + $safeTitle + '</text><text>' + $safeBody + '</text></binding></visual><audio src="ms-winsoundevent:Notification.Default"/></toast>'
         } else {
             $xml = '<?xml version="1.0" encoding="UTF-8"?><toast><visual><binding template="ToastGeneric"><text>' + $safeTitle + '</text><text>' + $safeBody + '</text></binding></visual><audio src="ms-winsoundevent:Notification.Default"/></toast>'
