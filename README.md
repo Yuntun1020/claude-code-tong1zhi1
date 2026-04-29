@@ -12,7 +12,8 @@
 
 ## 效果预览
 
-通知示例（带自定义图标）
+<img width="489" height="246" alt="image" src="https://github.com/user-attachments/assets/325d88c8-8172-4184-80ea-17d425d99085" />
+
 
 ## 快速安装
 
