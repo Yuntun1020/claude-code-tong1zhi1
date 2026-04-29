@@ -1,23 +1,25 @@
 {
   "hooks": {
-    "Notification": [
+    "PermissionRequest": [
       {
+        "matcher": "(all)",
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"& \\$env:USERPROFILE\\.claude\\hooks\\notify.ps1 -Event Notification\"",
-            "timeout": 15
+            "command": "powershell.exe -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\tong1zhi1\\ClaudeCodeHooks.ps1\" -State PermissionRequest",
+            "shell": "powershell"
           }
         ]
       }
     ],
     "Stop": [
       {
+        "matcher": "(all)",
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command \"& \\$env:USERPROFILE\\.claude\\hooks\\notify.ps1 -Event Stop\"",
-            "timeout": 15
+            "command": "powershell.exe -ExecutionPolicy Bypass -File \"%USERPROFILE%\\.claude\\tong1zhi1\\ClaudeCodeHooks.ps1\" -State Stop",
+            "shell": "powershell"
           }
         ]
       }

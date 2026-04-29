@@ -1,28 +1,24 @@
-# Claude Code Windows Toast 通知配置
+# Claude Code tong1zhi1 通知配置
 
-为 Claude Code 添加 Windows Toast 通知功能，当任务完成或需要权限确认时弹出通知。
+为 Claude Code 添加 Windows Toast 通知功能，支持任务完成通知和权限请求提醒。
 
 ## 功能
 
-- **Stop 事件**：任务完成时，从 transcript 中提取 AI 最后一条回复显示在通知中
-- **Notification 事件**：需要用户关注或批准时弹出通知
-- 支持自定义图标
-- 三层降级机制：BurntToast → WinRT Toast → BalloonTip
+- **Stop 事件**：对话结束时弹出通知
+- **PermissionRequest 事件**：需要权限确认时弹出通知提醒
+- 支持自定义图标（.png / .ico）
+- 两层降级机制：BurntToast → BalloonTip
 
 ## 效果预览
 
-通知示例（带自定义图标）：
-
-<img width="555" height="200" alt="image" src="https://github.com/user-attachments/assets/fb6f8eed-3d7d-467a-87a0-83eb22463361" />
-
+通知示例（带自定义图标）
 
 ## 快速安装
 
 ### 方式一：运行安装脚本（推荐）
 
 ```powershell
-# 在 PowerShell 中运行（不需要管理员权限）
-irm https://raw.githubusercontent.com/Yuntun1020/claude-code-windows-notify/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Yuntun1020/claude-code-tong1zhi1/main/install.ps1 | iex
 ```
 
 ### 方式二：手动安装
@@ -33,15 +29,17 @@ irm https://raw.githubusercontent.com/Yuntun1020/claude-code-windows-notify/main
 Install-Module -Name BurntToast -Force -Scope CurrentUser
 ```
 
-2. 创建 hooks 目录：
+2. 创建 tong1zhi1 目录：
 
 ```powershell
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\hooks"
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\tong1zhi1"
 ```
 
-3. 下载以下文件到 `~/.claude/hooks/` 目录：
-   - `notify.ps1`
-   - `icon.png`
+3. 下载以下文件到 `~/.claude/tong1zhi1/` 目录：
+   - `ClaudeCodeHooks.ps1`
+   - `claude_code.png`
+   - `claude_code.ico`
+   - `settings.json`
 
 4. 将 `settings.json` 中的 hooks 配置合并到 `~/.claude/settings.json` 中
 
@@ -49,30 +47,7 @@ New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\hooks"
 
 ## 更换图标
 
-将 `~/.claude/hooks/icon.png` 替换为你的图标（推荐尺寸：宽高比 1.6:1，高度 48-96 像素），重启 Claude Code 后生效。
-
-## 自定义配置
-
-### 修改通知标题
-
-编辑 `notify.ps1`，找到 `$toastTitle` 变量：
-
-```powershell
-$toastTitle = "ClaudeCode"  # 修改为你的标题
-```
-
-### 修改图标路径
-
-编辑 `notify.ps1`，找到 `$toastIcon` 变量：
-
-```powershell
-$toastIcon = Join-Path $scriptDir "icon.png"  # 修改为你的图标路径
-```
-
-## 卸载
-
-1. 从 `~/.claude/settings.json` 中删除 hooks 配置
-2. 删除 `~/.claude/hooks/` 目录中的 `notify.ps1` 和 `icon.png`
+将 `~/.claude/tong1zhi1/claude_code.png` 和 `claude_code.ico` 替换为你的图标，重启 Claude Code 后生效。推荐 PNG 尺寸：宽高比 1.6:1，高度 48-96 像素。
 
 ## 常见问题
 
@@ -101,10 +76,9 @@ $toastIcon = Join-Path $scriptDir "icon.png"  # 修改为你的图标路径
 
 ## 技术细节
 
-- **通知模块**：BurntToast > WinRT > BalloonTip（三层降级）
-- **图标支持**：PNG 格式
-- **UTF-8 编码**：脚本强制设置 UTF-8 以支持中文内容
-- **安全检查**：使用 `SecurityElement::Escape` 防止 XSS 注入
+- **通知模块**：BurntToast > BalloonTip（两层降级）
+- **图标支持**：PNG 和 ICO 格式
+- **Hook 事件**：PermissionRequest、Stop
 
 ## License
 

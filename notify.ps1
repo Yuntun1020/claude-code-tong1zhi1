@@ -2,232 +2,112 @@ param(
     [string]$Event = "Stop"
 )
 
-# Force execution policy for this script
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction SilentlyContinue
-
-# Force UTF-8 to correctly read Chinese and other unicode from Claude Code
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# =========================
-# Toast Settings
-# =========================
-# Icon path relative to this script
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$toastIcon  = Join-Path $scriptDir "icon.png"
-$toastTitle = "ClaudeCode"
+$toastIcon = Join-Path $scriptDir "claude_code.png"
+$toastTitle = "Claude Code"
+$toastIco = Join-Path $scriptDir "claude_code.ico"
 
-# Check icon exists
-if (-not (Test-Path $toastIcon)) {
-    $toastIcon = $null
-}
+if (-not (Test-Path $toastIcon)) { $toastIcon = $null }
+if (-not (Test-Path $toastIco)) { $toastIco = $null }
 
-# =========================
-# Read stdin JSON
-# =========================
 $inputLines = @()
-while ($null -ne ($line = [Console]::In.ReadLine())) {
-    $inputLines += $line
-}
+while ($null -ne ($line = [Console]::In.ReadLine())) { $inputLines += $line }
 $rawJson = $inputLines -join "`n"
 
 $data = $null
 if ($rawJson.Trim() -ne "") {
-    try {
-        $data = $rawJson | ConvertFrom-Json
-    } catch {
-        # JSON parse failed, use defaults
-    }
+    try { $data = $rawJson | ConvertFrom-Json } catch {}
 }
 
-# =========================
-# Default values
-# =========================
 $title = $toastTitle
 $body = ""
 
-# =========================
-# Event Logic
-# =========================
 if ($Event -eq "Stop") {
-
     $projectName = ""
-
-    if ($data -and $data.cwd) {
-        $projectName = Split-Path $data.cwd -Leaf
-    }
-
-    if ($projectName -ne "") {
-        $title = "$toastTitle - $projectName"
-    }
+    if ($data -and $data.cwd) { $projectName = Split-Path $data.cwd -Leaf }
+    if ($projectName -ne "") { $title = "$toastTitle - $projectName" }
 
     if ($data -and $data.transcript_path -and $data.transcript_path -ne "" -and (Test-Path $data.transcript_path)) {
         try {
             $lines = Get-Content $data.transcript_path -Tail 30 -Encoding UTF8
-
             for ($i = $lines.Count - 1; $i -ge 0; $i--) {
                 $entry = $null
-                try {
-                    $entry = $lines[$i] | ConvertFrom-Json
-                } catch {
-                    continue
-                }
-
+                try { $entry = $lines[$i] | ConvertFrom-Json } catch { continue }
                 if ($entry -and $entry.message -and $entry.message.role -eq "assistant") {
                     $content = $entry.message.content
-
-                    if ($content -is [string]) {
-                        $body = $content
-                    }
+                    if ($content -is [string]) { $body = $content }
                     elseif ($content -is [array]) {
                         $textBlock = $content | Where-Object { $_.type -eq "text" } | Select-Object -First 1
-                        if ($textBlock) {
-                            $body = $textBlock.text
-                        }
+                        if ($textBlock) { $body = $textBlock.text }
                     }
-
-                    if ($body.Trim() -ne "") {
-                        break
-                    }
+                    if ($body.Trim() -ne "") { break }
                 }
             }
+        } catch {}
+    }
+    if ($body.Trim() -eq "") { $body = "任务完成，请查看结果。" }
+    if ($body.Length -gt 150) { $body = $body.Substring(0, 147) + "..." }
 
-        } catch {
-            # transcript read failed
+} elseif ($Event -eq "PermissionRequest") {
+    $title = "$toastTitle - 权限请求"
+    if ($data -and $data.arguments) {
+        $args = $data.arguments
+        if ($args.tool -and $args.tool -ne "") { $body = "工具: $($args.tool)" }
+        if ($args.command -and $args.command -ne "") {
+            $cmd = $args.command
+            if ($cmd.Length -gt 100) { $cmd = $cmd.Substring(0, 97) + "..." }
+            if ($body -ne "") { $body = "$body`n$cmd" } else { $body = $cmd }
         }
     }
+    if ($body.Trim() -eq "") { $body = "Claude 请求权限确认，请检查操作。" }
 
-    if ($body.Trim() -eq "") {
-        $body = "Task completed, please review results."
-    }
-    elseif ($body.Length -gt 150) {
-        $body = $body.Substring(0, 147) + "..."
-    }
-
-}
-elseif ($Event -eq "Notification") {
-
-    $title = "$toastTitle - Needs Attention"
-
+} elseif ($Event -eq "Notification") {
+    $title = "$toastTitle - 需要关注"
     if ($data -and $data.message -and $data.message.Trim() -ne "") {
         $body = $data.message
-
-        if ($body.Length -gt 150) {
-            $body = $body.Substring(0, 147) + "..."
-        }
+        if ($body.Length -gt 150) { $body = $body.Substring(0, 147) + "..." }
+    } else {
+        $body = "Claude 正在等待你的输入或批准。"
     }
-    else {
-        $body = "Claude is waiting for your input or approval."
-    }
-
-}
-else {
+} else {
     $title = $toastTitle
-    $body = "Event received: $Event"
+    $body = "事件: $Event"
 }
 
-# =========================
-# BurntToast
-# =========================
 function Send-ToastViaBurntToast {
     param($t, $b)
-
     Import-Module BurntToast -ErrorAction Stop
-
     if ($toastIcon) {
         New-BurntToastNotification -AppLogo $toastIcon -Text $t, $b -Sound Default
-    }
-    else {
+    } else {
         New-BurntToastNotification -Text $t, $b -Sound Default
     }
 }
 
-# =========================
-# WinRT Toast
-# =========================
-function Send-ToastViaWinRT {
-    param($t, $b)
-
-    [Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime] | Out-Null
-    [Windows.Data.Xml.Dom.XmlDocument,Windows.Data.Xml.Dom,ContentType=WindowsRuntime] | Out-Null
-
-    $appId = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe"
-
-    $safeTitle = [System.Security.SecurityElement]::Escape($t)
-    $safeBody  = [System.Security.SecurityElement]::Escape($b)
-
-    if ($toastIcon) {
-        $iconUri = "file:///" + ($toastIcon -replace "\\","/")
-        $xml = @"
-<toast>
-    <visual>
-        <binding template='ToastGeneric'>
-            <image placement='appLogoOverride' src='$iconUri'/>
-            <text>$safeTitle</text>
-            <text>$safeBody</text>
-        </binding>
-    </visual>
-    <audio src='ms-winsoundevent:Notification.Default'/>
-</toast>
-"@
-    }
-    else {
-        $xml = @"
-<toast>
-    <visual>
-        <binding template='ToastGeneric'>
-            <text>$safeTitle</text>
-            <text>$safeBody</text>
-        </binding>
-    </visual>
-    <audio src='ms-winsoundevent:Notification.Default'/>
-</toast>
-"@
-    }
-
-    $toastXml = [Windows.Data.Xml.Dom.XmlDocument]::new()
-    $toastXml.LoadXml($xml)
-
-    $toast = [Windows.UI.Notifications.ToastNotification]::new($toastXml)
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show($toast)
-}
-
-# =========================
-# Balloon Fallback
-# =========================
 function Send-ToastViaBalloon {
     param($t, $b)
-
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
-
     $notify = New-Object System.Windows.Forms.NotifyIcon
-
-    if ($toastIcon) {
-        $notify.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($toastIcon)
-    }
-    else {
+    if ($toastIco) {
+        $notify.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($toastIco)
+    } else {
         $notify.Icon = [System.Drawing.SystemIcons]::Information
     }
-
     $notify.Visible = $true
-    $notify.ShowBalloonTip(8000, $t, $b, [System.Windows.Forms.ToolTipIcon]::Info)
-
-    Start-Sleep -Seconds 3
+    $notify.ShowBalloonTip(15000, $t, $b, [System.Windows.Forms.ToolTipIcon]::Info)
+    Start-Sleep -Seconds 16
     $notify.Dispose()
 }
 
-# =========================
-# Send Notification
-# =========================
 try {
     Send-ToastViaBurntToast $title $body
-}
-catch {
+} catch {
     try {
-        Send-ToastViaWinRT $title $body
-    }
-    catch {
         Send-ToastViaBalloon $title $body
-    }
+    } catch {}
 }
