@@ -75,33 +75,6 @@ elseif ($State -eq 'PermissionRequest') {
         $body = '需要权限确认，请检查操作。'
     }
 }
-elseif ($State -eq 'PreTool') {
-    $title = '权限请求'
-    if ($data -and $data.cwd) {
-        $projectName = Split-Path $data.cwd -Leaf
-        if ($projectName) { $title = "$title - $projectName" }
-    }
-    if ($data.tool) {
-        $body = '工具: ' + $data.tool
-        if ($data.arguments) {
-            $a = $data.arguments
-            $details = @()
-            if ($a.file_path) { $details += $a.file_path }
-            elseif ($a.path) { $details += $a.path }
-            if ($a.old_string -and $a.new_string) { $details += '[编辑]' }
-            if ($a.text) {
-                $t = $a.text
-                if ($t.Length -gt 80) { $t = $t.Substring(0, 77) + '...' }
-                $details += $t
-            }
-            if ($details.Count -gt 0) {
-                $body += "`n" + ($details -join "`n")
-            }
-        }
-    } else {
-        $body = '¼件触发: PreTool'
-    }
-}
 else {
     $body = '事件: ' + $State
 }
