@@ -9,7 +9,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force -ErrorAction S
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $pngPath = Join-Path $scriptDir 'claude_code.png'
 $icoPath = Join-Path $scriptDir 'claude_code.ico'
-$title = 'Claude Code'
+$title = '任务完成'
 $body = ''
 
 $inputLines = @()
@@ -54,7 +54,11 @@ if ($State -eq 'Stop') {
     if ($body.Length -gt 150) { $body = $body.Substring(0, 147) + '...' }
 }
 elseif ($State -eq 'PermissionRequest') {
-    $title = "$title - 权限请求"
+    $title = '权限请求'
+    if ($data -and $data.cwd) {
+        $projectName = Split-Path $data.cwd -Leaf
+        if ($projectName) { $title = "$title - $projectName" }
+    }
     $body = '需要权限确认'
     if ($data.arguments) {
         $a = $data.arguments
@@ -72,6 +76,7 @@ elseif ($State -eq 'PermissionRequest') {
     }
 }
 elseif ($State -eq 'PreTool') {
+    $title = '权限请求'
     if ($data -and $data.cwd) {
         $projectName = Split-Path $data.cwd -Leaf
         if ($projectName) { $title = "$title - $projectName" }
